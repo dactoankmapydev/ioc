@@ -9,12 +9,11 @@ type IocProvider interface {
 
 type IocInfo struct {
 	Name string
-	/*Sha256 string
+	Sha256 string
 	Sha1 string
 	Md5 string
 	Tags []string
 	FirstSubmit string
 	NotificationDate string
-	FileType string*/
+	FileType string
 }
-
