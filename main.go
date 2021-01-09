@@ -13,20 +13,20 @@ import (
 type ProviderList []ioc.IocProvider
 
 type IocData struct {
-	//Name string `json:"name"`
+	Name string `json:"name"`
 	Sha256 string `json:"sha256"`
-	/*Sha1 string `json:"sha1"`
+	Sha1 string `json:"sha1"`
 	Md5 string `json:"md5"`
 	Tags []string `json:"tags,string"`
 	FirstSubmit string `json:"first_submit"`
 	NotificationDate string `json:"notification_date"`
-	FileType string `json:"file_type"`*/
+	FileType string `json:"file_type"`
 }
 
 // Lấy dữ liệu
-func (list ProviderList) iocData(limit string) (string, error) {
+func (list ProviderList) iocData(limit string) (ioc.IocInfo, error) {
 	// Tạo channel để hứng data và error trả về từ routine
-	chanData := make(chan string)
+	chanData := make(chan ioc.IocInfo)
 	chanErr := make(chan error)
 
 	// Tạo các routine để thực hiện việc lấy data từ 2 nguồn:
@@ -41,22 +41,27 @@ func (list ProviderList) iocData(limit string) (string, error) {
 				return
 			}
 			// Đẩy dữ liệu vào channel
-			chanData <- data.Sha256
+			chanData <- data
 		}(p)
 	}
 
 	// Lấy dữ liệu từ các channel (nếu có)
-	var result []string
+	//result := make(map[string]string)
+	result := ioc.IocInfo{}
 	for i:=0; i < len(list); i++ {
 		select {
-		case sha256 := <-chanData:
-			result = append(result, sha256)
+		case item := <-chanData:
+			result.Name = item.Name
+			result.Sha256 = item.Sha256
+			result.Sha1 = item.Sha1
+			result.Md5 = item.Md5
+			result.FileType = item.FileType
 		case err := <-chanErr:
 			panic(err)
 		}
 	}
 
-	return result[0], nil
+	return result, nil
 }
 
 func main()  {
@@ -85,10 +90,16 @@ func main()  {
 		limit := vars["limit"]
 
 		// Lấy data
-		sha256, _ := iocList.iocData(limit)
+		data, _ := iocList.iocData(limit)
 
 		result := IocData{
-			Sha256: sha256,
+			Name: data.Name,
+			Sha256: data.Sha256,
+			Sha1: data.Sha1,
+			Md5: data.Md5,
+			FileType: data.FileType,
+			/*FirstSubmit: data.FirstSubmit,
+			NotificationDate: data.NotificationDate*/
 		}
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(result)
