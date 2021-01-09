@@ -4,7 +4,7 @@ package ioc
 type IocProvider interface {
 	//GetHuntingNotificationFiles(limit, cursor, filter string) (IocInfo, error)
 	//GetPulsesSubscribed(limit, page, modifiedSince string) (IocInfo, error)
-	Get(limit string) (string, error)
+	Get(limit string) (IocInfo, error)
 }
 
 type IocInfo struct {
