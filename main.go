@@ -46,7 +46,6 @@ func (list ProviderList) iocData(limit string) (ioc.IocInfo, error) {
 	}
 
 	// Lấy dữ liệu từ các channel (nếu có)
-	//result := make(map[string]string)
 	result := ioc.IocInfo{}
 	for i:=0; i < len(list); i++ {
 		select {
