@@ -19,10 +19,10 @@ var (
 )
 
 func (c HTTPClient) getVirustotal(api string) ([]byte, error) {
-	/*proxyURL, _ := url.Parse("http://127.0.0.1:3131")
+	proxyURL, _ := url.Parse("http://127.0.0.1:3131")
 	http.DefaultTransport = &http.Transport{
 		Proxy: http.ProxyURL(proxyURL),
-	}*/
+	}
 	req, _ := http.NewRequest("GET", api, nil)
 	req.Header.Set("X-Apikey", "7d42532bd1dea1e55f7a8e99cdee23d9b26c386a6485d6dcb4106b9d055f9277")
 	
@@ -43,10 +43,10 @@ func (c HTTPClient) getVirustotal(api string) ([]byte, error) {
 }
 
 func (c HTTPClient) getOtx(api string) ([]byte, error) {
-	/*proxyURL, _ := url.Parse("http://127.0.0.1:3131")
+	proxyURL, _ := url.Parse("http://127.0.0.1:3131")
 	http.DefaultTransport = &http.Transport{
 		Proxy: http.ProxyURL(proxyURL),
-	}*/
+	}
 	req, _ := http.NewRequest("GET", api, nil)
 	req.Header.Set("X-OTX-API-KEY", "779cc51038ddb07c5f6abe0832fed858a6039b9e8cdb167d3191938c1391dbba")
 	client := &http.Client{}
