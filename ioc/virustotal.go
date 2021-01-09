@@ -8,22 +8,28 @@ import (
 // Provider cho virustotal.com
 type VirustotalProvider struct {
 	APIKey string
-	API string
+	URL string
 }
 
 type VirustotalResult struct {
-	Data []VirustotalInfo `json:"data"`
-}
-
-type VirustotalInfo struct {
-	Name string `json:"name"`
-	/*Sha256 string `json:"sha256"`
-	Sha1 string `json:"sha1"`
-	Md5 string `json:"md5"`
-	Tags []string `json:"tags,string"`
-	FirstSubmit string `json:"first_submit"`
-	NotificationDate string `json:"notification_date"`
-	FileType string `json:"file_type"`*/
+	Data []struct {
+		Attributes struct {
+			//Names               []string `json:"names"`
+			//Md5                 string        `json:"md5"`
+			//Sha1                string        `json:"sha1"`
+			Sha256              string        `json:"sha256"`
+			//Tags                []string `json:"tags"`
+			//FirstSubmissionDate int           `json:"first_submission_date"`
+			//Exiftool            struct {
+			//	FileType string `json:"FileType"`
+			//} `json:"exiftool"`
+			//LastAnalysisResults struct {
+			//} `json:"last_analysis_results"`
+		} `json:"attributes"`
+		//ContextAttributes struct {
+		//	NotificationDate int `json:"notification_date"`
+		//} `json:"context_attributes"`
+	} `json:"data"`
 }
 
 // Implement hàm GetHuntingNotificationFiles của IocProvider Interface
@@ -38,25 +44,25 @@ type VirustotalInfo struct {
 	json.Unmarshal(body, &result)
     return result.asIocInfo(), nil
 }*/
-func (vp VirustotalProvider)  Get(limit string) (string, error) {
-	pathAPI := fmt.Sprintf("%s", vp.API + "?limit=" + limit)
+func (vp VirustotalProvider)  Get(limit string) (IocInfo, error) {
+	fmt.Println("func get limit")
+	pathAPI := fmt.Sprintf("%s", vp.URL + "?limit=" + limit)
 	fmt.Println(pathAPI)
 	body, err := httpClient.getVirustotal(pathAPI)
 	if err != nil {
-		return "", err
+		return IocInfo{}, err
 	}
-
 	var result VirustotalResult
 	json.Unmarshal(body, &result)
-	fmt.Println("data", result.Data[0])
-	return result.asIocInfo().Name, nil
+	return result.asIocInfo(), nil
 }
 
 func (vr VirustotalResult) asIocInfo() IocInfo {
+	fmt.Println("func asIocInfo")
 	return IocInfo{
-		Name:             vr.name(),
-		/*Sha256:           vr.sha256(),
-		Sha1:             vr.sha1(),
+		//Name:             vr.name(),
+		Sha256:           vr.sha256(),
+		/*Sha1:             vr.sha1(),
 		Md5:              vr.md5(),
 		Tags:             vr.tags(),
 		FirstSubmit:      vr.firstSubmit(),
@@ -65,15 +71,17 @@ func (vr VirustotalResult) asIocInfo() IocInfo {
 	}
 }
 
-func (vr VirustotalResult) name() string {
-	return vr.Data[0].Name
+/*func (vr VirustotalResult) name() string {
+	return vr.Data[0].Attributes.Names[0]
+}*/
+
+func (vr VirustotalResult) sha256() string {
+	fmt.Println("func get sha26")
+	fmt.Println("sha256", vr.Data[0].Attributes.Sha256)
+	return vr.Data[0].Attributes.Sha256
 }
 
-/*func (vr VirustotalResult) sha256() string {
-	return vr.Data[0].Sha256
-}
-
-func (vr VirustotalResult) sha1() string {
+/*func (vr VirustotalResult) sha1() string {
 	return vr.Data[0].Sha1
 }
 
@@ -96,4 +104,3 @@ func (vr VirustotalResult) notificationDate() string {
 func (vr VirustotalResult) fileType() string {
 	return vr.Data[0].FileType
 }*/
-
