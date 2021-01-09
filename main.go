@@ -3,19 +3,19 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/gorilla/mux"
 	ioc "ioc-provider/ioc"
 	"log"
 	"net/http"
 	"os"
-	"github.com/gorilla/mux"
 )
 // Danh sách các Provider
 type ProviderList []ioc.IocProvider
 
 type IocData struct {
-	Name string `json:"name"`
-	/*Sha256 string `json:"sha256"`
-	Sha1 string `json:"sha1"`
+	//Name string `json:"name"`
+	Sha256 string `json:"sha256"`
+	/*Sha1 string `json:"sha1"`
 	Md5 string `json:"md5"`
 	Tags []string `json:"tags,string"`
 	FirstSubmit string `json:"first_submit"`
@@ -41,30 +41,41 @@ func (list ProviderList) iocData(limit string) (string, error) {
 				return
 			}
 			// Đẩy dữ liệu vào channel
-			chanData <- data
+			chanData <- data.Sha256
 		}(p)
 	}
 
-	return ioc.IocInfo{}.Name, nil
+	// Lấy dữ liệu từ các channel (nếu có)
+	var result []string
+	for i:=0; i < len(list); i++ {
+		select {
+		case sha256 := <-chanData:
+			result = append(result, sha256)
+		case err := <-chanErr:
+			panic(err)
+		}
+	}
+
+	return result[0], nil
 }
 
 func main()  {
 	// Tạo provider để gọi api virustotal.com
 	virustotal := ioc.VirustotalProvider{
 		APIKey: os.Getenv("VIRUSTOTAL_API_KEY"),
-		API: "https://www.virustotal.com/api/v3/intelligence/hunting_notification_files",
+		URL: "https://www.virustotal.com/api/v3/intelligence/hunting_notification_files",
 	}
 
 	// Tạo provider để gọi api otx.alienvault.com
-	otx := ioc.OtxProvider{
+	/*otx := ioc.OtxProvider{
 		APIKey: os.Getenv("OTX_API_KEY"),
-		API:    "https://otx.alienvault.com/api/v1/pulses/subscribed",
-	}
+		URL:    "https://otx.alienvault.com/api/v1/pulses/subscribed",
+	}*/
 
 	// Danh sách chứa các service
 	iocList := ProviderList{
 		virustotal,
-		otx,
+		//otx,
 	}
 
 	// Xử lý Rest API sử dụng thư viện Gorilla Mux
@@ -74,10 +85,10 @@ func main()  {
 		limit := vars["limit"]
 
 		// Lấy data
-		name, _ := iocList.iocData(limit)
+		sha256, _ := iocList.iocData(limit)
 
 		result := IocData{
-			Name: name,
+			Sha256: sha256,
 		}
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(result)
@@ -88,4 +99,3 @@ func main()  {
 	log.Fatal(http.ListenAndServe(":"+fmt.Sprint(port), r))
 
 }
-
