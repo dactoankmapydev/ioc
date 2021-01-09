@@ -14,21 +14,21 @@ type VirustotalProvider struct {
 type VirustotalResult struct {
 	Data []struct {
 		Attributes struct {
-			//Names               []string `json:"names"`
-			//Md5                 string        `json:"md5"`
-			//Sha1                string        `json:"sha1"`
-			Sha256              string        `json:"sha256"`
-			//Tags                []string `json:"tags"`
-			//FirstSubmissionDate int           `json:"first_submission_date"`
-			//Exiftool            struct {
-			//	FileType string `json:"FileType"`
-			//} `json:"exiftool"`
-			//LastAnalysisResults struct {
-			//} `json:"last_analysis_results"`
+			Names               []string `json:"names"`
+			Md5                 string   `json:"md5"`
+			Sha1                string   `json:"sha1"`
+			Sha256              string   `json:"sha256"`
+			Tags                []string `json:"tags"`
+			FirstSubmissionDate string   `json:"first_submission_date"`
+			Exiftool            struct {
+				FileType string `json:"FileType"`
+			} `json:"exiftool"`
+			LastAnalysisResults struct {
+			} `json:"last_analysis_results"`
 		} `json:"attributes"`
-		//ContextAttributes struct {
-		//	NotificationDate int `json:"notification_date"`
-		//} `json:"context_attributes"`
+		ContextAttributes struct {
+			NotificationDate string `json:"notification_date"`
+		} `json:"context_attributes"`
 	} `json:"data"`
 }
 
@@ -45,7 +45,6 @@ type VirustotalResult struct {
     return result.asIocInfo(), nil
 }*/
 func (vp VirustotalProvider)  Get(limit string) (IocInfo, error) {
-	fmt.Println("func get limit")
 	pathAPI := fmt.Sprintf("%s", vp.URL + "?limit=" + limit)
 	fmt.Println(pathAPI)
 	body, err := httpClient.getVirustotal(pathAPI)
@@ -58,49 +57,57 @@ func (vp VirustotalProvider)  Get(limit string) (IocInfo, error) {
 }
 
 func (vr VirustotalResult) asIocInfo() IocInfo {
-	fmt.Println("func asIocInfo")
 	return IocInfo{
-		//Name:             vr.name(),
+		Name:             vr.name(),
 		Sha256:           vr.sha256(),
-		/*Sha1:             vr.sha1(),
+		Sha1:             vr.sha1(),
 		Md5:              vr.md5(),
 		Tags:             vr.tags(),
 		FirstSubmit:      vr.firstSubmit(),
 		NotificationDate: vr.notificationDate(),
-		FileType:         vr.fileType(),*/
+		FileType:         vr.fileType(),
 	}
 }
 
-/*func (vr VirustotalResult) name() string {
+func (vr VirustotalResult) name() string {
+	fmt.Println("name", vr.Data[0].Attributes.Names[0])
+	if len(vr.Data[0].Attributes.Names) == 0 {
+		return ""
+	}
 	return vr.Data[0].Attributes.Names[0]
-}*/
+}
 
 func (vr VirustotalResult) sha256() string {
-	fmt.Println("func get sha26")
 	fmt.Println("sha256", vr.Data[0].Attributes.Sha256)
 	return vr.Data[0].Attributes.Sha256
 }
 
-/*func (vr VirustotalResult) sha1() string {
-	return vr.Data[0].Sha1
+func (vr VirustotalResult) sha1() string {
+	fmt.Println("sha1", vr.Data[0].Attributes.Sha1)
+	return vr.Data[0].Attributes.Sha1
 }
 
 func (vr VirustotalResult) md5() string {
-	return vr.Data[0].Md5
+	fmt.Println("md5", vr.Data[0].Attributes.Md5)
+	return vr.Data[0].Attributes.Md5
 }
 
 func (vr VirustotalResult) tags() []string {
-	return vr.Data[0].Tags
+	fmt.Println("tags", vr.Data[0].Attributes.Tags)
+	return vr.Data[0].Attributes.Tags
 }
 
 func (vr VirustotalResult) firstSubmit() string {
-	return vr.Data[0].FirstSubmit
+	fmt.Println("submit", vr.Data[0].Attributes.FirstSubmissionDate)
+	return vr.Data[0].Attributes.FirstSubmissionDate
 }
 
 func (vr VirustotalResult) notificationDate() string {
-	return vr.Data[0].NotificationDate
+	fmt.Println("notidate", vr.Data[0].ContextAttributes.NotificationDate)
+	return vr.Data[0].ContextAttributes.NotificationDate
 }
 
 func (vr VirustotalResult) fileType() string {
-	return vr.Data[0].FileType
-}*/
+	fmt.Println("type", vr.Data[0].Attributes.Exiftool.FileType)
+	return vr.Data[0].Attributes.Exiftool.FileType
+}
