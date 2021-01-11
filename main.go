@@ -81,15 +81,17 @@ func main()  {
 		// Lấy data
 		data, _ := iocList.iocData(limit)
 		results := make([]ioc.VrttInfo, 0)
-        for _, value := range data {
-        	results = append(results, ioc.VrttInfo{
-        		Name: value.Name,
-        		Sha256: value.Sha256,
-        		Sha1: value.Sha1,
-        		Md5: value.Md5,
-        		FileType: value.FileType,
-        		FirstSubmit: value.FirstSubmit,
-        		NotificationDate: value.NotificationDate,
+		for _, value := range data {
+			results = append(results, ioc.VrttInfo{
+				Name: value.Name,
+				Sha256: value.Sha256,
+				Sha1: value.Sha1,
+				Md5: value.Md5,
+				FileType: value.FileType,
+				FirstSubmit: value.FirstSubmit,
+				NotificationDate: value.NotificationDate,
+				Tags: value.Tags,
+				LastAnalysisResults: value.LastAnalysisResults,
 			})
 		}
 
@@ -97,7 +99,7 @@ func main()  {
 		json.NewEncoder(w).Encode(results)
 	}).Methods("GET")
 
-	port := 3000
+	port := 9000
 	fmt.Printf("Server is listening at port: %d\n", port)
 	log.Fatal(http.ListenAndServe(":"+fmt.Sprint(port), r))
 
