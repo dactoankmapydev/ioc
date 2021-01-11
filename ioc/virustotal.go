@@ -81,11 +81,11 @@ func difference(slice1 []string, slice2 []string) []string {
 	return diff
 }
 
-func merge(avType []string, avName []string) map[string]string {
+func merge(avName []string, avType []string) map[string]string {
 	avMap := make(map[string]string)
-	for i:=0; i< len(avType); i++ {
-		for j:=0; j< len(avName); j++ {
-			avMap[avType[j]] = avName[j]
+	for i:=0; i< len(avName); i++ {
+		for j:=0; j< len(avType); j++ {
+			avMap[avName[i]] = avType[i]
 		}
 	}
 	return avMap
@@ -95,11 +95,12 @@ func avd(slice1 []string, map1 map[string]string) []string {
 	var lastAv []string
 	for i:=0; i< len(slice1) ; i++ {
 		for k, v := range map1 {
-			if k == slice1[i]{
-				fmt.Println(v)
-				lastAv = append(lastAv, v)
+			if slice1[i] == v{
+				lastAv = append(lastAv, k)
+
 			}
 		}
+		break
 	}
 	return lastAv
 }
@@ -209,13 +210,13 @@ func (vr VirustotalResult) av(i int) []string {
 		}
 	}
 
-	av := merge(results, avNames)
+	av := merge(avNames, results)
 	avDetect := difference(results, avTypeClear)
 	fmt.Println("avDetect->", avDetect, len(avDetect))
 	nameAvDetect := avd(avDetect,av)
 	fmt.Println("nameAvDetect",nameAvDetect, len(nameAvDetect))
 	point := point(nameAvDetect)
 	fmt.Print(point)
-	return results
+	return nameAvDetect
 }
 
