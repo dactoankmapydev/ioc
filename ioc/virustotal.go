@@ -47,7 +47,7 @@ func (vp VirustotalProvider)  GetHuntingNotificationFiles(limit string) ([]VrttI
 
 func (vr VirustotalResult) asVrttInfo() []VrttInfo {
 	results := make([]VrttInfo, 0)
-	for _, item := range vr.Data {
+	for i, item := range vr.Data {
 		results = append(results, VrttInfo{
 			Name:             strings.Join(item.Attributes.Names, ", "),
 			Sha256:           item.Attributes.Sha256,
@@ -57,7 +57,7 @@ func (vr VirustotalResult) asVrttInfo() []VrttInfo {
 			FirstSubmit:      item.Attributes.FirstSubmissionDate,
 			NotificationDate: item.ContextAttributes.NotificationDate,
 			FileType:         item.Attributes.Exiftool.FileType,
-			LastAnalysisResults: vr.av(),
+			LastAnalysisResults: vr.av(i),
 		})
 	}
 
@@ -66,34 +66,46 @@ func (vr VirustotalResult) asVrttInfo() []VrttInfo {
 
 func difference(slice1 []string, slice2 []string) []string {
 	var diff []string
-
-	// Loop two times, first to find slice1 strings not in slice2,
-	// second loop to find slice2 strings not in slice1
-	for i := 0; i < 2; i++ {
-		for _, s1 := range slice1 {
-			found := false
-			for _, s2 := range slice2 {
-				if s1 == s2 {
-					found = true
-					break
-				}
-			}
-			// String not found. We add it to return slice
-			if !found {
-				diff = append(diff, s1)
+	for i:=0; i< len(slice1) ; i++ {
+		var isexit bool
+		for j:=0; j< len(slice2) ; j++ {
+			if slice1[i] == slice2[j]{
+				isexit = true
+				break;
 			}
 		}
-		// Swap the slices, only if it was the first loop
-		if i == 0 {
-			slice1, slice2 = slice2, slice1
+		if isexit != true {
+			diff = append(diff,slice1[i])
 		}
 	}
-
 	return diff
 }
 
-func (vr VirustotalResult) av() []string {
-	/*avHash := map[string]int{
+func merge(avType []string, avName []string) map[string]string {
+	avMap := make(map[string]string)
+	for i:=0; i< len(avType); i++ {
+		for j:=0; j< len(avName); j++ {
+			avMap[avType[j]] = avName[j]
+		}
+	}
+	return avMap
+}
+
+func avd(slice1 []string, map1 map[string]string) []string {
+	var lastAv []string
+	for i:=0; i< len(slice1) ; i++ {
+		for k, v := range map1 {
+			if k == slice1[i]{
+				fmt.Println(v)
+				lastAv = append(lastAv, v)
+			}
+		}
+	}
+	return lastAv
+}
+
+func point(slice1 []string) int {
+	avHash := map[string]int{
 		"Ad-Aware": 1,
 		"AegisLab": 1,
 		"ALYac": 2,
@@ -170,18 +182,40 @@ func (vr VirustotalResult) av() []string {
 		"Trapmine": 1,
 		"Trustlook": 1,
 		"Webroot": 1,
-	}*/
+	}
+	var total int = 0
+	for i:=0; i< len(slice1) ; i++ {
+		for k, v := range avHash {
+			if k == slice1[i]{
+				total += v
+			}
+		}
+	}
+	return total
+}
+
+func (vr VirustotalResult) av(i int) []string {
 	results := make([]string, 0)
-	avTypeClear := []string{"undetected", "timeout", "type-unsupported", "confirmed-timeout"}
-	for _, item := range vr.Data {
-		totalAv := item.Attributes.LastAnalysisResults
-		for _, avType := range totalAv {
-			//if avType["category"]
-			results = append(results, avType["category"])
+	avNames := make([]string, 0)
+
+	avTypeClear := []string{"confirmed-timeout", "undetected", "timeout", "type-unsupported", "failure"}
+	for index, item := range vr.Data {
+		if index == i {
+			totalAv := item.Attributes.LastAnalysisResults
+			for avName, avType := range totalAv {
+				avNames = append(avNames, avName)
+				results = append(results, avType["category"])
+			}
 		}
 	}
 
+	av := merge(results, avNames)
 	avDetect := difference(results, avTypeClear)
-	fmt.Println(results, avDetect, len(avDetect))
+	fmt.Println("avDetect->", avDetect, len(avDetect))
+	nameAvDetect := avd(avDetect,av)
+	fmt.Println("nameAvDetect",nameAvDetect, len(nameAvDetect))
+	point := point(nameAvDetect)
+	fmt.Print(point)
 	return results
 }
+
