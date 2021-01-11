@@ -18,9 +18,7 @@ func (list ProviderList) iocData(limit string) ([]ioc.VrttInfo, error) {
 	chanData := make(chan []ioc.VrttInfo)
 	chanErr := make(chan error)
 
-	// Tạo các routine để thực hiện việc lấy data từ 2 nguồn:
-	// -virustotal
-	// -otx
+	// Tạo các routine để thực hiện việc lấy data từ nguồn virustotal:
 	for _, p := range list {
 		// Run routine
 		go func(i ioc.IocProvider) {
@@ -99,7 +97,7 @@ func main()  {
 		json.NewEncoder(w).Encode(results)
 	}).Methods("GET")
 
-	port := 9000
+	port := 3000
 	fmt.Printf("Server is listening at port: %d\n", port)
 	log.Fatal(http.ListenAndServe(":"+fmt.Sprint(port), r))
 
