@@ -12,21 +12,10 @@ import (
 // Danh sách các Provider
 type ProviderList []ioc.IocProvider
 
-type IocData struct {
-	Name string `json:"name"`
-	Sha256 string `json:"sha256"`
-	Sha1 string `json:"sha1"`
-	Md5 string `json:"md5"`
-	Tags []string `json:"tags,string"`
-	FirstSubmit string `json:"first_submit"`
-	NotificationDate string `json:"notification_date"`
-	FileType string `json:"file_type"`
-}
-
 // Lấy dữ liệu
-func (list ProviderList) iocData(limit string) (ioc.IocInfo, error) {
+func (list ProviderList) iocData(limit string) ([]ioc.VrttInfo, error) {
 	// Tạo channel để hứng data và error trả về từ routine
-	chanData := make(chan ioc.IocInfo)
+	chanData := make(chan []ioc.VrttInfo)
 	chanErr := make(chan error)
 
 	// Tạo các routine để thực hiện việc lấy data từ 2 nguồn:
@@ -35,7 +24,7 @@ func (list ProviderList) iocData(limit string) (ioc.IocInfo, error) {
 	for _, p := range list {
 		// Run routine
 		go func(i ioc.IocProvider) {
-			data, err := i.Get(limit)
+			data, err := i.GetHuntingNotificationFiles(limit)
 			if err != nil {
 				chanErr <- err
 				return
@@ -46,20 +35,17 @@ func (list ProviderList) iocData(limit string) (ioc.IocInfo, error) {
 	}
 
 	// Lấy dữ liệu từ các channel (nếu có)
-	result := ioc.IocInfo{}
+	var result []ioc.VrttInfo
 	for i:=0; i < len(list); i++ {
 		select {
 		case item := <-chanData:
-			result.Name = item.Name
-			result.Sha256 = item.Sha256
-			result.Sha1 = item.Sha1
-			result.Md5 = item.Md5
-			result.FileType = item.FileType
+			for _, value := range item {
+				result = append(result, value)
+			}
 		case err := <-chanErr:
 			panic(err)
 		}
 	}
-
 	return result, nil
 }
 
@@ -82,26 +68,35 @@ func main()  {
 		//otx,
 	}
 
+	// Lấy dữ liệu từ channel
+	//data, _ := iocList.iocData("3")
+	//fmt.Println(data)
+
 	// Xử lý Rest API sử dụng thư viện Gorilla Mux
 	r := mux.NewRouter()
-	r.HandleFunc("/api/ioc/{limit}", func(w http.ResponseWriter, r *http.Request) {
+
+	// Vrtt api
+	r.HandleFunc("/api/ioc/vrtt/{limit}", func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
 		limit := vars["limit"]
 
 		// Lấy data
 		data, _ := iocList.iocData(limit)
-
-		result := IocData{
-			Name: data.Name,
-			Sha256: data.Sha256,
-			Sha1: data.Sha1,
-			Md5: data.Md5,
-			FileType: data.FileType,
-			/*FirstSubmit: data.FirstSubmit,
-			NotificationDate: data.NotificationDate*/
+		results := make([]ioc.VrttInfo, 0)
+        for _, value := range data {
+        	results = append(results, ioc.VrttInfo{
+        		Name: value.Name,
+        		Sha256: value.Sha256,
+        		Sha1: value.Sha1,
+        		Md5: value.Md5,
+        		FileType: value.FileType,
+        		FirstSubmit: value.FirstSubmit,
+        		NotificationDate: value.NotificationDate,
+			})
 		}
+
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(result)
+		json.NewEncoder(w).Encode(results)
 	}).Methods("GET")
 
 	port := 9000
