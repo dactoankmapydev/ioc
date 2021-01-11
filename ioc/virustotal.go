@@ -20,15 +20,14 @@ type VirustotalResult struct {
 			Sha1                string   `json:"sha1"`
 			Sha256              string   `json:"sha256"`
 			Tags                []string `json:"tags"`
-			FirstSubmissionDate string   `json:"first_submission_date"`
+			FirstSubmissionDate int   `json:"first_submission_date"`
 			Exiftool            struct {
 				FileType string `json:"FileType"`
 			} `json:"exiftool"`
-			LastAnalysisResults struct {
-			} `json:"last_analysis_results"`
+			LastAnalysisResults map[string]map[string]string `json:"last_analysis_results"`
 		} `json:"attributes"`
 		ContextAttributes struct {
-			NotificationDate string `json:"notification_date"`
+			NotificationDate int `json:"notification_date"`
 		} `json:"context_attributes"`
 	} `json:"data"`
 }
@@ -58,47 +57,101 @@ func (vr VirustotalResult) asVrttInfo() []VrttInfo {
 			FirstSubmit:      item.Attributes.FirstSubmissionDate,
 			NotificationDate: item.ContextAttributes.NotificationDate,
 			FileType:         item.Attributes.Exiftool.FileType,
+			LastAnalysisResults: vr.av(),
 		})
 	}
 
 	return results
 }
 
-/*func (vr VirustotalResult) sha256() []string {
-	sha256 := make([]string, 0)
+func (vr VirustotalResult) av() []string {
+	/*avHash := map[string]int{
+		"Ad-Aware": 1,
+		"AegisLab": 1,
+		"ALYac": 2,
+		"Antiy-AVL": 1,
+		"Arcabit": 1,
+		"Avast": 3,
+		"AVG": 2,
+		"Avira": 1,
+		"Baidu": 2,
+		"BitDefender": 3,
+		"CAT-QuickHeal": 1,
+		"Comodo": 2,
+		"Cynet": 1,
+		"Cyren": 1,
+		"DrWeb": 1,
+		"Emsisoft": 2,
+		"eScan": 2,
+		"ESET-NOD32": 3,
+		"F-Secure": 2,
+		"FireEye": 3,
+		"Fortinet": 3,
+		"GData": 1,
+		"Ikarus": 2,
+		"Kaspersky": 3,
+		"MAX": 1,
+		"McAfee": 3,
+		"Microsoft": 3,
+		"Panda": 2,
+		"Qihoo-360": 2,
+		"Rising": 1,
+		"Sophos": 2,
+		"TrendMicro": 3,
+		"TrendMicro-HouseCall": 1,
+		"ZoneAlarm by Check Point": 1,
+		"Zoner": 1,
+		"AhnLab - V3": 1,
+		"BitDefenderTheta": 2,
+		"Bkav": 1,
+		"ClamAV": 3,
+		"CMC": 1,
+		"Gridinsoft": 1,
+		"Jiangmin": 1,
+		"K7AntiVirus": 1,
+		"K7GW": 1,
+		"Kingsoft": 1,
+		"Malwarebytes": 3,
+		"MaxSecure": 1,
+		"McAfee - GW - Edition": 3,
+		"NANO - Antivirus": 1,
+		"Sangfor Engine Zero": 1,
+		"SUPERAntiSpyware": 1,
+		"Symantec": 3,
+		"TACHYON": 1,
+		"Tencent": 2,
+		"TotalDefense": 1,
+		"VBA32": 2,
+		"VIPRE": 1,
+		"ViRobot": 1,
+		"Yandex": 3,
+		"Zillya": 1,
+		"Acronis": 3,
+		"Alibaba": 2,
+		"SecureAge APEX": 1,
+		"Avast - Mobile": 2,
+		"BitDefenderFalx": 3,
+		"CrowdStrike Falcon": 3,
+		"Cybereason": 3,
+		"Cylance": 2,
+		"eGambit": 1,
+		"Elastic": 1,
+		"Palo Alto Networks": 2,
+		"SentinelOne (Static ML)": 1,
+		"Symantec Mobile Insight": 3,
+		"Trapmine": 1,
+		"Trustlook": 1,
+		"Webroot": 1,
+	}*/
+	results := make([]string, 0)
+	//avTypeClear := []string{}
 	for _, item := range vr.Data {
-		sha256 = append(sha256, item.Attributes.Sha256)
+		totalAv := item.Attributes.LastAnalysisResults
+		for _, avType := range totalAv {
+			//if avType["category"]
+			results = append(results, avType["category"])
+		}
 	}
-	return sha256
+	fmt.Println(results)
+	return results
 }
-
-/*func (vr VirustotalResult) name() string {
-	if len(vr.Data[0].Attributes.Names) == 0 {
-		return ""
-	}
-	return vr.Data[0].Attributes.Names[0]
-}
-
-func (vr VirustotalResult) sha1() string {
-	return vr.Data[0].Attributes.Sha1
-}
-
-func (vr VirustotalResult) md5() string {
-	return vr.Data[0].Attributes.Md5
-}
-
-func (vr VirustotalResult) tags() []string {
-	return vr.Data[0].Attributes.Tags
-}
-
-func (vr VirustotalResult) firstSubmit() string {
-	return vr.Data[0].Attributes.FirstSubmissionDate
-}
-
-func (vr VirustotalResult) notificationDate() string {
-	return vr.Data[0].ContextAttributes.NotificationDate
-}
-
-func (vr VirustotalResult) fileType() string {
-	return vr.Data[0].Attributes.Exiftool.FileType
-}*/
