@@ -1,96 +1,61 @@
 package ioc
 
-import (
+/*import (
 	"encoding/json"
 	"fmt"
+	"strings"
 )
 
 // Provider cho otx.alienvault.com
 type OtxProvider struct {
 	APIKey string
-	API string
+	URL string
 }
 
-type OtxlResult struct {
-	Data []OtxInfo `json:"data"`
-}
-
-type OtxInfo struct {
-	Name string `json:"name"`
-	/*Sha256 string `json:"sha256"`
-	Sha1 string `json:"sha1"`
-	Md5 string `json:"md5"`
-	Tags []string `json:"tags,string"`
-	FirstSubmit string `json:"first_submit"`
-	NotificationDate string `json:"notification_date"`
-	FileType string `json:"file_type"`*/
+type OtxResult struct {
+	Results []struct {
+		ID         string `json:"id"`
+		Name       string `json:"name"`
+		Modified   string `json:"modified"`
+		Created    string `json:"created"`
+		Indicators []struct {
+			ID        int    `json:"id"`
+			Indicator string `json:"indicator"`
+			Type      string `json:"type"`
+		} `json:"indicators"`
+		Tags []string `json:"tags"`
+	} `json:"results"`
+	Next string `json:"next"`
 }
 
 // Implement hàm GetPulsesSubscribed của IocProvider Interface
-/*func (op OtxProvider)  GetPulsesSubscribed(limit, page, modifiedSince string) (IocInfo, error) {
-	pathAPI := fmt.Sprintf("%s%s%s%s", op.API, limit, page, modifiedSince)
-	body, err := httpClient.getOtx(pathAPI)
-	if err != nil {
-		return IocInfo{}, err
-	}
-	var result OtxlResult
-	json.Unmarshal(body, &result)
-	return result.asIocInfo(), nil
-}*/
-func (op OtxProvider)  Get(limit string) (string, error) {
-	pathAPI := fmt.Sprintf("%s", op.API + "?limit=" + limit)
+func (op OtxProvider)  GetPulsesSubscribed(limit string) ([]IocInfo, error) {
+	pathAPI := fmt.Sprintf("%s", op.URL + "?limit=" + limit)
 	fmt.Println(pathAPI)
 	body, err := httpClient.getOtx(pathAPI)
 	if err != nil {
-		return "", err
+		return []IocInfo{}, err
 	}
-	var result OtxlResult
-	json.Unmarshal(body, &result)
-	fmt.Println(result)
-	return result.asIocInfo().Name, nil
+	var otxResult OtxResult
+	json.Unmarshal(body, &otxResult)
+	return otxResult.asOtxInfo, nil
 }
 
-func (or OtxlResult) asIocInfo() IocInfo {
-	return IocInfo{
-		Name:             or.name(),
-		/*Sha256:           or.sha256(),
-		Sha1:             or.sha1(),
-		Md5:              or.md5(),
-		Tags:             or.tags(),
-		FirstSubmit:      or.firstSubmit(),
-		NotificationDate: or.notificationDate(),
-		FileType:         or.fileType(),*/
+func (op OtxProvider) asOtxInfo() []IocInfo {
+	results := make([]IocInfo, 0)
+	for _, item := range op. {
+		results = append(results, IocInfo{
+			Name:             strings.Join(item.Attributes.Names, ", "),
+			Sha256:           item.Attributes.Sha256,
+			Sha1:             item.Attributes.Sha1,
+			Md5:              item.Attributes.Md5,
+			Tags:             item.Attributes.Tags,
+			FirstSubmit:      item.Attributes.FirstSubmissionDate,
+			NotificationDate: item.ContextAttributes.NotificationDate,
+			FileType:         item.Attributes.Exiftool.FileType,
+		})
 	}
-}
 
-func (or OtxlResult) name() string {
-	return or.Data[0].Name
-}
-
-/*func (or OtxlResult) sha256() string {
-	return or.Data[0].Sha256
-}
-
-func (or OtxlResult) sha1() string {
-	return or.Data[0].Sha1
-}
-
-func (or OtxlResult) md5() string {
-	return or.Data[0].Md5
-}
-
-func (or OtxlResult) tags() []string {
-	return or.Data[0].Tags
-}
-
-func (or OtxlResult) firstSubmit() string {
-	return or.Data[0].FirstSubmit
-}
-
-func (or OtxlResult) notificationDate() string {
-	return or.Data[0].NotificationDate
-}
-
-func (or OtxlResult) fileType() string {
-	return or.Data[0].FileType
+	return results
 }*/
+
