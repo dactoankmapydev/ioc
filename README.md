@@ -27,3 +27,30 @@
 ]
 }
 ```
+
+```
+{
+    "results": [
+        {
+            "id": "5fd3f1f18a7e313da2c01587",
+            "name": "Chinese APT's New Arsenal: Part 3 Smanager",
+            "modified": "2021-01-10T00:02:05.455000",
+            "created": "2020-12-11T22:25:53.495000",
+            "indicators": [
+                {
+                    "id": 1817422075,
+                    "indicator": "freenow.chickenkiller.com",
+                    "type": "hostname"
+                }
+            ],
+            "tags": [
+                "Smanager",
+                "Tmanger",
+                "Chinese APT",
+                "PhantomNet"
+            ]
+        }
+    ],
+    "next": "https://otx.alienvault.com/api/v1/pulses/subscribed?limit=1&page=2"
+}
+```
