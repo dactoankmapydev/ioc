@@ -92,6 +92,8 @@ func main()  {
 				NotificationDate: value.NotificationDate,
 				Tags: value.Tags,
 				LastAnalysisResults: value.LastAnalysisResults,
+				Detected: value.Detected,
+				Point: value.Point,
 			})
 		}
 		w.Header().Set("Content-Type", "application/json")
