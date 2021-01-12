@@ -3,6 +3,7 @@ package ioc
 import (
 	"encoding/json"
 	"fmt"
+	"ioc-provider/model"
 	"strings"
 )
 
@@ -30,27 +31,30 @@ type VirustotalResult struct {
 			NotificationDate int `json:"notification_date"`
 		} `json:"context_attributes"`
 	} `json:"data"`
+	Meta struct {
+		Cursor string `json:"cursor"`
+	} `json:"meta"`
 }
 
 // Implement hàm GetHuntingNotificationFiles của IocProvider Interface
-func (vp VirustotalProvider)  GetHuntingNotificationFiles(limit string) ([]VrttInfo, error) {
-	pathAPI := fmt.Sprintf("%s", vp.URL + "?limit=" + limit)
+func (vp VirustotalProvider) GetHuntingNotificationFiles() ([]model.VrttInfo, error) {
+	pathAPI := fmt.Sprintf("%s", vp.URL + "?limit=40")
 	fmt.Println(pathAPI)
 	body, err := httpClient.getVirustotal(pathAPI)
 	if err != nil {
-		return []VrttInfo{}, err
+		return []model.VrttInfo{}, err
 	}
 	var result VirustotalResult
 	json.Unmarshal(body, &result)
 	return result.asVrttInfo(), nil
 }
 
-func (vr VirustotalResult) asVrttInfo() []VrttInfo {
-	results := make([]VrttInfo, 0)
+func (vr VirustotalResult) asVrttInfo() []model.VrttInfo {
+	results := make([]model.VrttInfo, 0)
 	for i, item := range vr.Data {
-        pointAv :=vr.avp(i)
-        if pointAv >= 13 {
-			results = append(results, VrttInfo{
+		pointAv := vr.enginesPoint(i)
+		if pointAv >= 13 {
+			results = append(results, model.VrttInfo{
 				Name:             strings.Join(item.Attributes.Names, ", "),
 				Sha256:           item.Attributes.Sha256,
 				Sha1:             item.Attributes.Sha1,
@@ -59,58 +63,61 @@ func (vr VirustotalResult) asVrttInfo() []VrttInfo {
 				FirstSubmit:      item.Attributes.FirstSubmissionDate,
 				NotificationDate: item.ContextAttributes.NotificationDate,
 				FileType:         item.Attributes.Exiftool.FileType,
-				LastAnalysisResults: vr.avList(i),
-				Detected: len(vr.avList(i)),
-				Point: vr.avp(i),
+				EnginesDetected:  vr.enginesDetected(i),
+				Detected:         len(vr.enginesDetected(i)),
+				Point:            vr.enginesPoint(i),
 			})
 		}
 	}
-
 	return results
 }
 
-func difference(slice1 []string, slice2 []string) []string {
-	var diff []string
-	for i:=0; i< len(slice1) ; i++ {
-		var isexit bool
-		for j:=0; j< len(slice2) ; j++ {
-			if slice1[i] == slice2[j]{
-				isexit = true
+// Lọc ra loại engines detected
+func enginesTypeDetected(enginesType []string, enginesTypeClear []string) []string {
+	var typeDetected []string
+	for i:=0; i < len(enginesType); i++ {
+		var isExit bool
+		for j:=0; j < len(enginesTypeClear); j++ {
+			if enginesType[i] == enginesTypeClear[j]{
+				isExit = true
 				break;
 			}
 		}
-		if isexit != true {
-			diff = append(diff,slice1[i])
+		if isExit != true {
+			typeDetected = append(typeDetected, enginesType[i])
 		}
 	}
-	return diff
+	return typeDetected
 }
 
+// Hợp nhất tên engines và kiểu engines detected thành một map
 func merge(avName []string, avType []string) map[string]string {
 	avMap := make(map[string]string)
-	for i:=0; i< len(avName); i++ {
-		for j:=0; j< len(avType); j++ {
+	for i:=0; i < len(avName); i++ {
+		for j:=0; j < len(avType); j++ {
 			avMap[avName[i]] = avType[i]
 		}
 	}
 	return avMap
 }
 
-func avd(slice1 []string, map1 map[string]string) []string {
-	var lastAv []string
-	for i:=0; i< len(slice1) ; i++ {
-		for k, v := range map1 {
-			if slice1[i] == v{
-				lastAv = append(lastAv, k)
+// Lọc ra tên engines detected
+func nameEnginesDetected(typeDetected []string, engines map[string]string) []string {
+	var nameDetected []string
+	for i:=0; i < len(typeDetected); i++ {
+		for nameEngines, typeEngines := range engines {
+			if typeDetected[i] == typeEngines {
+				nameDetected = append(nameDetected, nameEngines)
 			}
 		}
 		break
 	}
-	return lastAv
+	return nameDetected
 }
 
-func point(slice1 []string) int {
-	avHash := map[string]int{
+// Tính tổng điểm cho engines có tên nằm trong enginesHash
+func point(enginesDetected []string) int {
+	enginesHash := map[string]int{
 		"Ad-Aware": 1,
 		"AegisLab": 1,
 		"ALYac": 2,
@@ -189,38 +196,36 @@ func point(slice1 []string) int {
 		"Webroot": 1,
 	}
 	var total int = 0
-	for i:=0; i< len(slice1) ; i++ {
-		for k, v := range avHash {
-			if k == slice1[i]{
-				total += v
+	for i:=0; i < len(enginesDetected); i++ {
+		for nameEngines, pointEngines := range enginesHash {
+			if nameEngines == enginesDetected[i]{
+				total += pointEngines
 			}
 		}
 	}
 	return total
 }
 
-func (vr VirustotalResult) avList(i int) []string {
-	results := make([]string, 0)
-	avNames := make([]string, 0)
-
-	avTypeClear := []string{"confirmed-timeout", "undetected", "timeout", "type-unsupported", "failure"}
+// Danh sách engines detected
+func (vr VirustotalResult) enginesDetected(i int) []string {
+	enginesType := make([]string, 0)
+	enginesName := make([]string, 0)
+	enginesTypeClear := []string{"confirmed-timeout", "undetected", "timeout", "type-unsupported", "failure"}
 	for index, item := range vr.Data {
 		if index == i {
-			totalAv := item.Attributes.LastAnalysisResults
-			for avName, avType := range totalAv {
-				avNames = append(avNames, avName)
-				results = append(results, avType["category"])
+			totalEngines := item.Attributes.LastAnalysisResults
+			for avName, avType := range totalEngines {
+				enginesName = append(enginesName, avName)
+				enginesType = append(enginesType, avType["category"])
 			}
 		}
 	}
-	av := merge(avNames, results)
-	avDetect := difference(results, avTypeClear)
-	nameAvDetect := avd(avDetect,av)
-	return nameAvDetect
+	detect := enginesTypeDetected(enginesType, enginesTypeClear)
+	engines := merge(enginesName, enginesType)
+	return nameEnginesDetected(detect,engines)
 }
 
-func (vr VirustotalResult) avp(i int) int {
-	nameAvDetect := vr.avList(i)
-	point := point(nameAvDetect)
-	return point
+// Tính điểm engines
+func (vr VirustotalResult) enginesPoint(i int) int {
+	return point(vr.enginesDetected(i))
 }
