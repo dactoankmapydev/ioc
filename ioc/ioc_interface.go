@@ -17,6 +17,8 @@ type VrttInfo struct {
 	FileType string
 	Tags []string
 	LastAnalysisResults []string
+	Detected int
+	Point int
 }
 
 /*type OtxInfo struct {
