@@ -48,7 +48,7 @@ func (vp VirustotalProvider)  GetHuntingNotificationFiles(limit string) ([]VrttI
 func (vr VirustotalResult) asVrttInfo() []VrttInfo {
 	results := make([]VrttInfo, 0)
 	for i, item := range vr.Data {
-        pointAv :=vr.av(i)
+        pointAv :=vr.avp(i)
         if pointAv >= 13 {
 			results = append(results, VrttInfo{
 				Name:             strings.Join(item.Attributes.Names, ", "),
@@ -60,8 +60,8 @@ func (vr VirustotalResult) asVrttInfo() []VrttInfo {
 				NotificationDate: item.ContextAttributes.NotificationDate,
 				FileType:         item.Attributes.Exiftool.FileType,
 				LastAnalysisResults: vr.avList(i),
-				Detected: vr.avDetected(i),
-				Point: vr.av(i),
+				Detected: len(vr.avList(i)),
+				Point: vr.avp(i),
 			})
 		}
 	}
@@ -199,32 +199,6 @@ func point(slice1 []string) int {
 	return total
 }
 
-func (vr VirustotalResult) av(i int) int {
-	results := make([]string, 0)
-	avNames := make([]string, 0)
-
-	avTypeClear := []string{"confirmed-timeout", "undetected", "timeout", "type-unsupported", "failure"}
-	for index, item := range vr.Data {
-		if index == i {
-			totalAv := item.Attributes.LastAnalysisResults
-			for avName, avType := range totalAv {
-				avNames = append(avNames, avName)
-				results = append(results, avType["category"])
-			}
-		}
-	}
-
-	av := merge(avNames, results)
-	avDetect := difference(results, avTypeClear)
-	//fmt.Println("avDetect->", avDetect, len(avDetect))
-	nameAvDetect := avd(avDetect,av)
-	//fmt.Println("nameAvDetect",nameAvDetect, len(nameAvDetect))
-	point := point(nameAvDetect)
-	//fmt.Print(point)
-	//return nameAvDetect
-	return point
-}
-
 func (vr VirustotalResult) avList(i int) []string {
 	results := make([]string, 0)
 	avNames := make([]string, 0)
@@ -239,35 +213,14 @@ func (vr VirustotalResult) avList(i int) []string {
 			}
 		}
 	}
-
 	av := merge(avNames, results)
 	avDetect := difference(results, avTypeClear)
-	//fmt.Println("avDetect->", avDetect, len(avDetect))
 	nameAvDetect := avd(avDetect,av)
-	//fmt.Println("nameAvDetect",nameAvDetect, len(nameAvDetect))
 	return nameAvDetect
 }
 
-func (vr VirustotalResult) avDetected(i int) int {
-	results := make([]string, 0)
-	avNames := make([]string, 0)
-
-	avTypeClear := []string{"confirmed-timeout", "undetected", "timeout", "type-unsupported", "failure"}
-	for index, item := range vr.Data {
-		if index == i {
-			totalAv := item.Attributes.LastAnalysisResults
-			for avName, avType := range totalAv {
-				avNames = append(avNames, avName)
-				results = append(results, avType["category"])
-			}
-		}
-	}
-
-	av := merge(avNames, results)
-	avDetect := difference(results, avTypeClear)
-	//fmt.Println("avDetect->", avDetect, len(avDetect))
-	nameAvDetect := avd(avDetect,av)
-	//fmt.Println("nameAvDetect",nameAvDetect, len(nameAvDetect))
-	return len(nameAvDetect)
+func (vr VirustotalResult) avp(i int) int {
+	nameAvDetect := vr.avList(i)
+	point := point(nameAvDetect)
+	return point
 }
-
