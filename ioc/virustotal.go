@@ -10,7 +10,6 @@ import (
 // Provider cho virustotal.com
 type VirustotalProvider struct {
 	APIKey string
-	URL string
 }
 
 type VirustotalResult struct {
@@ -36,39 +35,25 @@ type VirustotalResult struct {
 	} `json:"meta"`
 }
 
-//pathAPI := fmt.Sprintf("%s?cursor=%s", vp.URL, cursor + "&limit=40")
-
-
 // Implement hàm GetHuntingNotificationFiles của IocProvider Interface
 func (vp VirustotalProvider) GetHuntingNotificationFiles() ([]model.VrttInfo, error) {
-	pathAPI := fmt.Sprintf("%s", vp.URL)
-	body, err := httpClient.getVirustotal(pathAPI)
-	if err != nil {
-		return []model.VrttInfo{}, err
-	}
-	var result VirustotalResult
-	json.Unmarshal(body, &result)
-	return result.asVrttInfo(), nil
-}
-
-func (vr VirustotalResult) asVrttInfo() []model.VrttInfo {
 	results := make([]model.VrttInfo, 0)
 	cursor := []string{""}
+	fmt.Println("cursor_start->",cursor, len(cursor), cursor[0])
 	for len(cursor) > 0 {
-		fmt.Println(1)
 		pathAPI := fmt.Sprintf("https://www.virustotal.com/api/v3/intelligence/hunting_notification_files?cursor=%s", cursor[0] + "&limit=40")
-		fmt.Println(pathAPI)
+		fmt.Println("pathAPI->",pathAPI)
 		body, err := httpClient.getVirustotal(pathAPI)
 		if err != nil {
-			return []model.VrttInfo{}
+			return []model.VrttInfo{}, nil
 		}
-		var result VirustotalResult
-		json.Unmarshal(body, &result)
-
-		if result.Meta.Cursor != "" {
-			fmt.Println(2)
-			cursor[0] = result.Meta.Cursor
-			fmt.Println(cursor)
+		var vr VirustotalResult
+		json.Unmarshal(body, &vr)
+        fmt.Println("cursor->",vr.Meta.Cursor)
+		if vr.Meta.Cursor != "" {
+			cursor[0] = vr.Meta.Cursor
+			fmt.Println("cursor_0_new->",cursor[0])
+			fmt.Println("cursor_new->",cursor)
 			for i, item := range vr.Data {
 				pointAv := vr.enginesPoint(i)
 				if pointAv >= 13 {
@@ -87,10 +72,13 @@ func (vr VirustotalResult) asVrttInfo() []model.VrttInfo {
 					})
 				}
 			}
+			fmt.Println("results vrtt->", results)
+		} else {
+			cursor = cursor[:0]
+			fmt.Println("clear->", cursor)
 		}
-		cursor = cursor[:0]
 	}
-	return results
+	return results, nil
 }
 
 // Lọc ra loại engines detected
