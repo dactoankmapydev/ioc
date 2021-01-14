@@ -36,10 +36,12 @@ type VirustotalResult struct {
 	} `json:"meta"`
 }
 
+//pathAPI := fmt.Sprintf("%s?cursor=%s", vp.URL, cursor + "&limit=40")
+
+
 // Implement hàm GetHuntingNotificationFiles của IocProvider Interface
 func (vp VirustotalProvider) GetHuntingNotificationFiles() ([]model.VrttInfo, error) {
-	pathAPI := fmt.Sprintf("%s", vp.URL + "?limit=40")
-	fmt.Println(pathAPI)
+	pathAPI := fmt.Sprintf("%s", vp.URL)
 	body, err := httpClient.getVirustotal(pathAPI)
 	if err != nil {
 		return []model.VrttInfo{}, err
@@ -51,23 +53,42 @@ func (vp VirustotalProvider) GetHuntingNotificationFiles() ([]model.VrttInfo, er
 
 func (vr VirustotalResult) asVrttInfo() []model.VrttInfo {
 	results := make([]model.VrttInfo, 0)
-	for i, item := range vr.Data {
-		pointAv := vr.enginesPoint(i)
-		if pointAv >= 13 {
-			results = append(results, model.VrttInfo{
-				Name:             strings.Join(item.Attributes.Names, ", "),
-				Sha256:           item.Attributes.Sha256,
-				Sha1:             item.Attributes.Sha1,
-				Md5:              item.Attributes.Md5,
-				Tags:             item.Attributes.Tags,
-				FirstSubmit:      item.Attributes.FirstSubmissionDate,
-				NotificationDate: item.ContextAttributes.NotificationDate,
-				FileType:         item.Attributes.Exiftool.FileType,
-				EnginesDetected:  vr.enginesDetected(i),
-				Detected:         len(vr.enginesDetected(i)),
-				Point:            vr.enginesPoint(i),
-			})
+	cursor := []string{""}
+	for len(cursor) > 0 {
+		fmt.Println(1)
+		pathAPI := fmt.Sprintf("https://www.virustotal.com/api/v3/intelligence/hunting_notification_files?cursor=%s", cursor[0] + "&limit=40")
+		fmt.Println(pathAPI)
+		body, err := httpClient.getVirustotal(pathAPI)
+		if err != nil {
+			return []model.VrttInfo{}
 		}
+		var result VirustotalResult
+		json.Unmarshal(body, &result)
+
+		if result.Meta.Cursor != "" {
+			fmt.Println(2)
+			cursor[0] = result.Meta.Cursor
+			fmt.Println(cursor)
+			for i, item := range vr.Data {
+				pointAv := vr.enginesPoint(i)
+				if pointAv >= 13 {
+					results = append(results, model.VrttInfo{
+						Name:             strings.Join(item.Attributes.Names, ", "),
+						Sha256:           item.Attributes.Sha256,
+						Sha1:             item.Attributes.Sha1,
+						Md5:              item.Attributes.Md5,
+						Tags:             item.Attributes.Tags,
+						FirstSubmit:      item.Attributes.FirstSubmissionDate,
+						NotificationDate: item.ContextAttributes.NotificationDate,
+						FileType:         item.Attributes.Exiftool.FileType,
+						EnginesDetected:  vr.enginesDetected(i),
+						Detected:         len(vr.enginesDetected(i)),
+						Point:            vr.enginesPoint(i),
+					})
+				}
+			}
+		}
+		cursor = cursor[:0]
 	}
 	return results
 }
