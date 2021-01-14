@@ -1,14 +1,11 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
-	"github.com/gorilla/mux"
 	"github.com/joho/godotenv"
 	ioc "ioc-provider/ioc"
 	"ioc-provider/model"
 	"log"
-	"net/http"
 	"os"
 )
 // Danh sách các Provider
@@ -68,6 +65,26 @@ func main()  {
 		//otx,
 	}
 
+	data, _ := iocList.iocData()
+	results := make([]model.VrttInfo, 0)
+	for _, value := range data {
+		results = append(results, model.VrttInfo{
+			Name: value.Name,
+			Sha256: value.Sha256,
+			Sha1: value.Sha1,
+			Md5: value.Md5,
+			FileType: value.FileType,
+			FirstSubmit: value.FirstSubmit,
+			NotificationDate: value.NotificationDate,
+			Tags: value.Tags,
+			EnginesDetected: value.EnginesDetected,
+			Detected: value.Detected,
+			Point: value.Point,
+		})
+	}
+	fmt.Println(results)
+
+	/*
 	// Xử lý Rest API sử dụng thư viện Gorilla Mux
 	r := mux.NewRouter()
 	// Vrtt api
@@ -97,5 +114,5 @@ func main()  {
 	}).Methods("GET")
 	port := 9000
 	fmt.Printf("Server is listening at port: %d\n", port)
-	log.Fatal(http.ListenAndServe(":" + fmt.Sprint(port), r))
+	log.Fatal(http.ListenAndServe(":" + fmt.Sprint(port), r))*/
 }
