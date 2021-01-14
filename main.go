@@ -56,7 +56,6 @@ func main()  {
 	// Tạo provider để gọi api virustotal.com
 	virustotal := ioc.VirustotalProvider{
 		APIKey: os.Getenv("VIRUSTOTAL_API_KEY"),
-		URL: "https://www.virustotal.com/api/v3/intelligence/hunting_notification_files",
 	}
 
 	// Danh sách chứa các service
@@ -82,9 +81,9 @@ func main()  {
 			Point: value.Point,
 		})
 	}
-	fmt.Println(results)
+	fmt.Println("results main->", results)
 
-	/*
+    /*
 	// Xử lý Rest API sử dụng thư viện Gorilla Mux
 	r := mux.NewRouter()
 	// Vrtt api
