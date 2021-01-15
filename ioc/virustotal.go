@@ -36,28 +36,23 @@ type VirustotalResult struct {
 }
 
 // Implement hàm GetHuntingNotificationFiles của IocProvider Interface
-func (vp VirustotalProvider) GetHuntingNotificationFiles() ([]model.VrttInfo, error) {
-	results := make([]model.VrttInfo, 0)
+func (vp VirustotalProvider) GetHuntingNotificationFiles() {
 	cursor := []string{""}
-	fmt.Println("cursor_start->",cursor, len(cursor), cursor[0])
 	for len(cursor) > 0 {
 		pathAPI := fmt.Sprintf("https://www.virustotal.com/api/v3/intelligence/hunting_notification_files?cursor=%s", cursor[0] + "&limit=40")
 		fmt.Println("pathAPI->",pathAPI)
 		body, err := httpClient.getVirustotal(pathAPI)
 		if err != nil {
-			return []model.VrttInfo{}, nil
+			return
 		}
 		var vr VirustotalResult
 		json.Unmarshal(body, &vr)
-        fmt.Println("cursor->",vr.Meta.Cursor)
 		if vr.Meta.Cursor != "" {
 			cursor[0] = vr.Meta.Cursor
-			fmt.Println("cursor_0_new->",cursor[0])
-			fmt.Println("cursor_new->",cursor)
 			for i, item := range vr.Data {
 				pointAv := vr.enginesPoint(i)
 				if pointAv >= 13 {
-					results = append(results, model.VrttInfo{
+					sample := model.VrttInfo{
 						Name:             strings.Join(item.Attributes.Names, ", "),
 						Sha256:           item.Attributes.Sha256,
 						Sha1:             item.Attributes.Sha1,
@@ -69,16 +64,14 @@ func (vp VirustotalProvider) GetHuntingNotificationFiles() ([]model.VrttInfo, er
 						EnginesDetected:  vr.enginesDetected(i),
 						Detected:         len(vr.enginesDetected(i)),
 						Point:            vr.enginesPoint(i),
-					})
+					}
+					fmt.Println("sample->",sample)
 				}
 			}
-			fmt.Println("results vrtt->", results)
 		} else {
 			cursor = cursor[:0]
-			fmt.Println("clear->", cursor)
 		}
 	}
-	return results, nil
 }
 
 // Lọc ra loại engines detected
